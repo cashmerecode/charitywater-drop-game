@@ -1,5 +1,3 @@
-// Project 4 | Water Drop — High Score + Achievements + Goal Bar + Summary
-
 const startBtn = document.getElementById('startBtn');
 const replayBtn = document.getElementById('replayBtn');
 const game = document.getElementById('game');
@@ -20,8 +18,10 @@ const summaryModal = document.getElementById('summaryModal');
 const sumScore = document.getElementById('sumScore');
 const sumClean = document.getElementById('sumClean');
 const sumPolluted = document.getElementById('sumPolluted');
+const sumLost = document.getElementById('sumLost');
 const summaryPlayAgain = document.getElementById('summaryPlayAgain');
 
+// ---- Game state ----
 let score = 0;
 let timeLeft = 30;
 let running = false;
@@ -34,7 +34,9 @@ let currentStreak = 0;
 let bestStreak = 0;
 let timeToFirstClean = null;
 let gameStartEpoch = 0;
+let waterLost = 0;
 
+// ---- Helpers ----
 const rng = (min, max) => Math.random() * (max - min) + min;
 
 function setFeedback(msg, color) {
@@ -63,6 +65,7 @@ function updateGoal() {
   if (goalText) goalText.textContent = `Next milestone: ${next} points`;
 }
 
+// ---- Persistence ----
 const STORAGE = {
   HIGH: 'waterdrop:highscore',
   STATS: 'waterdrop:stats',
@@ -89,6 +92,7 @@ let achieved = loadJSON(STORAGE.ACH, {});
 
 if (highScoreEl) highScoreEl.textContent = String(highScore);
 
+// ---- Achievements ----
 const BADGES = [
   { id:'score100',  title:'Clean Water Hero',  desc:'Score 100+ in a game.',          color:'#16a34a', icon:'★', check:m=> m.finalScore >= 100 },
   { id:'score200',  title:'Flow Master',       desc:'Score 200+ in a game.',          color:'#0284c7', icon:'◆', check:m=> m.finalScore >= 200 },
@@ -123,6 +127,7 @@ if (achievementsBtn && achievementsModal) {
   achievementsModal.addEventListener('close', () => achievementsModal.blur());
 }
 
+// ---- Spawning & interactions ----
 function spawnDrop() {
   const isBad = Math.random() < 0.25;
   const drop = document.createElement('button');
@@ -148,9 +153,13 @@ function spawnDrop() {
       if (isBad) {
         score = Math.max(0, score - 2);
         scoreEl.textContent = score;
+        waterLost++;
         setFeedback('Polluted hit ground: -2', '#ef4444');
-        updateGoal();
+      } else {
+        waterLost++;
+        setFeedback('Clean water wasted!', '#ef4444');
       }
+      updateGoal();
       clearInterval(loop);
       drop.remove();
     }
@@ -188,6 +197,7 @@ function spawnDrop() {
   game.appendChild(drop);
 }
 
+// ---- Lifecycle ----
 function startGame() {
   if (running) return;
   running = true;
@@ -206,6 +216,7 @@ function startGame() {
   bestStreak = 0;
   timeToFirstClean = null;
   gameStartEpoch = performance.now();
+  waterLost = 0;
 
   spawnLoop = setInterval(spawnDrop, 500);
   timerLoop = setInterval(() => {
@@ -265,10 +276,11 @@ function endGame() {
   startBtn.textContent = 'Start';
   replayBtn.disabled = false;
 
-  if (summaryModal && sumScore && sumClean && sumPolluted) {
+  if (summaryModal && sumScore && sumClean && sumPolluted && sumLost) {
     sumScore.textContent = String(score);
     sumClean.textContent = String(cleanClicks);
     sumPolluted.textContent = String(pollutedClicks);
+    sumLost.textContent = String(waterLost);
     summaryModal.showModal();
   }
 }
