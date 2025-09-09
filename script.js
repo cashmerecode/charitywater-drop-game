@@ -236,7 +236,7 @@ function spawnDrop() {
 function scheduleSpawn() {
   if (!running) return;
   spawnDrop();
-  spawnDelay = Math.max(minSpawnDelay, spawnDelay - 6); 
+  spawnDelay = Math.max(minSpawnDelay, spawnDelay - 6);
   spawnTimer = setTimeout(scheduleSpawn, spawnDelay);
 }
 
@@ -367,6 +367,5 @@ if (summaryPlayAgain) {
   });
 }
 
-// Init
 renderAchievements();
 updateGoal();
