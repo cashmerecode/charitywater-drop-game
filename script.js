@@ -1,4 +1,5 @@
-// ---- Element refs ----
+// Project 4 | Water Drop — High Score + Achievements + Goal Bar + Summary
+
 const startBtn = document.getElementById('startBtn');
 const replayBtn = document.getElementById('replayBtn');
 const game = document.getElementById('game');
@@ -11,14 +12,22 @@ const achievementsBtn = document.getElementById('achievementsBtn');
 const achievementsModal = document.getElementById('achievementsModal');
 const achievementsList = document.getElementById('achievementsList');
 
-// ---- Game state ----
+const goalFill = document.getElementById('goalFill');
+const goalText = document.getElementById('goalText');
+const goalBar = document.querySelector('.goal-bar');
+
+const summaryModal = document.getElementById('summaryModal');
+const sumScore = document.getElementById('sumScore');
+const sumClean = document.getElementById('sumClean');
+const sumPolluted = document.getElementById('sumPolluted');
+const summaryPlayAgain = document.getElementById('summaryPlayAgain');
+
 let score = 0;
 let timeLeft = 30;
 let running = false;
 let spawnLoop = null;
 let timerLoop = null;
 
-// per-run trackers for achievements
 let cleanClicks = 0;
 let pollutedClicks = 0;
 let currentStreak = 0;
@@ -26,7 +35,6 @@ let bestStreak = 0;
 let timeToFirstClean = null;
 let gameStartEpoch = 0;
 
-// ---- Helpers ----
 const rng = (min, max) => Math.random() * (max - min) + min;
 
 function setFeedback(msg, color) {
@@ -45,7 +53,16 @@ function popText(x, y, text, color) {
   setTimeout(() => el.remove(), 650);
 }
 
-// ---- Persistence (localStorage) ----
+function updateGoal() {
+  const step = 100;
+  const prev = Math.floor(score / step) * step;
+  const next = prev + step;
+  const pct = Math.min(100, ((score - prev) / (next - prev)) * 100);
+  if (goalFill) goalFill.style.width = pct + '%';
+  if (goalBar) goalBar.setAttribute('aria-valuenow', String(Math.round(pct)));
+  if (goalText) goalText.textContent = `Next milestone: ${next} points`;
+}
+
 const STORAGE = {
   HIGH: 'waterdrop:highscore',
   STATS: 'waterdrop:stats',
@@ -68,25 +85,17 @@ function saveJSON(key, value) {
 
 let highScore = Number(localStorage.getItem(STORAGE.HIGH) || 0);
 let stats = loadJSON(STORAGE.STATS, defaultStats);
-let achieved = loadJSON(STORAGE.ACH, {}); // map badgeId -> true
+let achieved = loadJSON(STORAGE.ACH, {});
 
-highScoreEl && (highScoreEl.textContent = String(highScore));
+if (highScoreEl) highScoreEl.textContent = String(highScore);
 
-// ---- Achievements ----
-// Each badge: id, title, desc, color, icon, check(metrics)
 const BADGES = [
-  { id:'score100',  title:'Clean Water Hero',   desc:'Score 100+ in a game.',           color:'#16a34a', icon:'★',
-    check:m=> m.finalScore >= 100 },
-  { id:'score200',  title:'Flow Master',        desc:'Score 200+ in a game.',           color:'#0284c7', icon:'◆',
-    check:m=> m.finalScore >= 200 },
-  { id:'streak10',  title:'Precision Catcher',  desc:'10 clean catches in a row.',      color:'#a855f7', icon:'⧗',
-    check:m=> m.bestStreak >= 10 },
-  { id:'noPollute', title:'Crystal Hands',      desc:'Finish with 0 polluted clicks.',  color:'#22c55e', icon:'✓',
-    check:m=> m.pollutedClicks === 0 && m.cleanClicks > 0 },
-  { id:'speedstart',title:'Quick Start',        desc:'First clean within 3 seconds.',    color:'#f97316', icon:'⚡',
-    check:m=> m.timeToFirstClean !== null && m.timeToFirstClean <= 3 },
-  { id:'fiveGames', title:'Steady Stream',      desc:'Play 5 total games.',             color:'#64748b', icon:'∞',
-    check:m=> m.stats.totalGames >= 5 },
+  { id:'score100',  title:'Clean Water Hero',  desc:'Score 100+ in a game.',          color:'#16a34a', icon:'★', check:m=> m.finalScore >= 100 },
+  { id:'score200',  title:'Flow Master',       desc:'Score 200+ in a game.',          color:'#0284c7', icon:'◆', check:m=> m.finalScore >= 200 },
+  { id:'streak10',  title:'Precision Catcher', desc:'10 clean catches in a row.',     color:'#a855f7', icon:'⧗', check:m=> m.bestStreak >= 10 },
+  { id:'noPollute', title:'Crystal Hands',     desc:'Finish with 0 polluted clicks.', color:'#22c55e', icon:'✓', check:m=> m.pollutedClicks === 0 && m.cleanClicks > 0 },
+  { id:'speedstart',title:'Quick Start',       desc:'First clean within 3 seconds.',   color:'#f97316', icon:'⚡', check:m=> m.timeToFirstClean !== null && m.timeToFirstClean <= 3 },
+  { id:'fiveGames', title:'Steady Stream',     desc:'Play 5 total games.',            color:'#64748b', icon:'∞', check:m=> m.stats.totalGames >= 5 },
 ];
 
 function renderAchievements() {
@@ -114,9 +123,8 @@ if (achievementsBtn && achievementsModal) {
   achievementsModal.addEventListener('close', () => achievementsModal.blur());
 }
 
-// ---- Spawning & interactions ----
 function spawnDrop() {
-  const isBad = Math.random() < 0.25; // 25% polluted
+  const isBad = Math.random() < 0.25;
   const drop = document.createElement('button');
   drop.className = 'drop ' + (isBad ? 'bad' : 'clean');
   drop.setAttribute('aria-label', isBad ? 'Polluted drop' : 'Clean water drop');
@@ -125,7 +133,7 @@ function spawnDrop() {
   drop.style.left = x + 'px';
   drop.style.top = '-40px';
 
-  const speed = rng(80, 140); // px/s
+  const speed = rng(80, 140);
   const label = document.createElement('span');
   label.className = 'label';
   label.textContent = isBad ? 'X' : '✓';
@@ -134,13 +142,14 @@ function spawnDrop() {
   let y = -40;
   const loop = setInterval(() => {
     if (!running) { clearInterval(loop); drop.remove(); return; }
-    y += speed * 0.016; // ~60fps
+    y += speed * 0.016;
     drop.style.top = y + 'px';
     if (y > game.clientHeight) {
       if (isBad) {
         score = Math.max(0, score - 2);
         scoreEl.textContent = score;
         setFeedback('Polluted hit ground: -2', '#ef4444');
+        updateGoal();
       }
       clearInterval(loop);
       drop.remove();
@@ -160,7 +169,7 @@ function spawnDrop() {
       currentStreak = 0;
       score = Math.max(0, score - 5);
       popText(px, py, '-5', '#ef4444');
-      setFeedback('Oops, polluted! -5', '#ef4444');
+      setFeedback('Dirty drop. Try again!', '#ef4444');
     } else {
       cleanClicks++;
       if (timeToFirstClean === null) {
@@ -173,21 +182,23 @@ function spawnDrop() {
       setFeedback('Great catch! +10', '#16a34a');
     }
     scoreEl.textContent = score;
+    updateGoal();
   });
 
   game.appendChild(drop);
 }
 
-// ---- Lifecycle ----
 function startGame() {
   if (running) return;
   running = true;
-  score = 0; timeLeft = 30;
+  score = 0;
+  timeLeft = 30;
   scoreEl.textContent = score;
   timerEl.textContent = timeLeft;
   startBtn.style.display = 'none';
   replayBtn.disabled = true;
   setFeedback('Catch the clean water drops!');
+  updateGoal();
 
   cleanClicks = 0;
   pollutedClicks = 0;
@@ -209,24 +220,21 @@ function endGame() {
   clearInterval(spawnLoop);
   clearInterval(timerLoop);
 
-  // Update stats
   stats.totalGames += 1;
   stats.totalClean += cleanClicks;
   stats.totalPolluted += pollutedClicks;
   stats.bestCleanStreak = Math.max(stats.bestCleanStreak, bestStreak);
   saveJSON(STORAGE.STATS, stats);
 
-  // High score
   if (score > highScore) {
     highScore = score;
     localStorage.setItem(STORAGE.HIGH, String(highScore));
-    highScoreEl && (highScoreEl.textContent = String(highScore));
+    if (highScoreEl) highScoreEl.textContent = String(highScore);
     setFeedback(`New High Score! ${highScore}`, '#16a34a');
   } else {
     setFeedback(score >= 100 ? 'Amazing! You are a clean water hero!' : 'Good try! Play again or learn more.');
   }
 
-  // Achievements
   const metrics = {
     finalScore: score,
     cleanClicks,
@@ -252,23 +260,30 @@ function endGame() {
     });
   }
 
-  // Cleanup + UI reset
   [...document.querySelectorAll('.drop')].forEach(d => d.remove());
   startBtn.style.display = 'inline-block';
   startBtn.textContent = 'Start';
   replayBtn.disabled = false;
+
+  if (summaryModal && sumScore && sumClean && sumPolluted) {
+    sumScore.textContent = String(score);
+    sumClean.textContent = String(cleanClicks);
+    sumPolluted.textContent = String(pollutedClicks);
+    summaryModal.showModal();
+  }
 }
 
 function resetGame() {
   [...document.querySelectorAll('.drop')].forEach(d => d.remove());
-  score = 0; timeLeft = 30;
+  score = 0;
+  timeLeft = 30;
   scoreEl.textContent = score;
   timerEl.textContent = timeLeft;
-  setFeedback('Ready when you are.');
   currentStreak = 0;
+  setFeedback('Ready when you are.');
+  updateGoal();
 }
 
-// ---- Bindings ----
 startBtn.addEventListener('click', startGame);
 replayBtn.addEventListener('click', () => { resetGame(); startGame(); });
 
@@ -278,5 +293,14 @@ document.addEventListener('keydown', (e) => {
   if (k === 'r' && !running) { resetGame(); startGame(); }
 });
 
-// Pre-render achievements list for the modal
+if (summaryPlayAgain) {
+  summaryPlayAgain.addEventListener('click', (e) => {
+    e.preventDefault();
+    summaryModal.close();
+    resetGame();
+    startGame();
+  });
+}
+
 renderAchievements();
+updateGoal();
