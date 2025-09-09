@@ -23,8 +23,16 @@
       <button id="achievementsBtn" class="ghost small" aria-haspopup="dialog" aria-controls="achievementsModal">Achievements</button>
     </section>
 
+    <section class="goal" aria-label="Milestone">
+      <div class="goal-label">
+        <span id="goalText">Next milestone: 100 points</span>
+      </div>
+      <div class="goal-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div id="goalFill" class="goal-fill"></div>
+      </div>
+    </section>
+
     <section id="game" class="game-area" aria-label="Game Area">
-      <!-- Drops are spawned here by JS -->
       <button id="startBtn" class="cta" aria-label="Start game">Start</button>
       <div id="feedback" class="feedback" aria-live="polite"></div>
     </section>
@@ -39,7 +47,6 @@
     <small>Charity: Water Project</small>
   </footer>
 
-  <!-- Achievements Modal -->
   <dialog id="achievementsModal" class="achievements">
     <form method="dialog" class="achievements-card">
       <header>
@@ -51,6 +58,40 @@
       <div id="achievementsList" class="achievements-list" aria-live="polite"></div>
       <footer class="achievements-footer">
         <small>Earn badges by playing — progress saves in your browser.</small>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="summaryModal" class="summary">
+    <form method="dialog" class="summary-card">
+      <header>
+        <h2>Great run!</h2>
+        <menu>
+          <button value="close" class="ghost small">Close</button>
+        </menu>
+      </header>
+      <div class="summary-body">
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="summary-value" id="sumScore">0</div>
+            <div class="summary-label">Score</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-value" id="sumClean">0</div>
+            <div class="summary-label">Clean Drops</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-value" id="sumPolluted">0</div>
+            <div class="summary-label">Polluted Clicks</div>
+          </div>
+        </div>
+        <p class="summary-note">
+          See how clean water changes lives:
+          <a class="link" href="https://www.charitywater.org/our-work" target="_blank" rel="noopener">Stories & impact</a>
+        </p>
+      </div>
+      <footer class="summary-footer">
+        <button id="summaryPlayAgain" class="cta">Play Again</button>
       </footer>
     </form>
   </dialog>
