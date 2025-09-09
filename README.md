@@ -31,11 +31,8 @@ This project was created as part of **Project 4 | charity: water Game Concept**.
 
 ## 🖼 Screenshots / Wireframes  
 
-### Desktop Layout  
-![Desktop Wireframe](assets/wireframe-desktop.png)  
-
-### Mobile Layout  
-![Mobile Wireframe](assets/wireframe-mobile.png)  
+### Responsive Layout  
+![Responsive Wireframe](assets/wireframe-mobile.png)  
 
 *(Replace these with actual gameplay screenshots once deployed — wireframes included for now.)*  
 
