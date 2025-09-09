@@ -67,9 +67,7 @@ body {
 
 .stat { font-weight: 600; }
 
-.goal {
-  margin: 12px 0 0;
-}
+.goal { margin: 12px 0 0; }
 
 .goal-label {
   display: flex;
@@ -285,7 +283,7 @@ dialog.summary::backdrop { background: rgba(15, 23, 42, .4); }
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-bottom: 10px;
 }
@@ -305,5 +303,5 @@ dialog.summary::backdrop { background: rgba(15, 23, 42, .4); }
 @media (max-width: 640px) {
   .game-area { height: 68vh; }
   .achievements-list { grid-template-columns: 1fr; }
-  .summary-grid { grid-template-columns: 1fr; }
+  .summary-grid { grid-template-columns: 1fr 1fr; }
 }
