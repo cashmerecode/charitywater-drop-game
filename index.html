@@ -1,1 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project 4 | Water Drop: Clean Water Challenge</title>
+  <meta name="description" content="A simple web game inspired by charity: water to raise awareness about clean water access." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Water Drop: Clean Water Challenge</h1>
+    <div class="brand">
+      <!-- Swap this placeholder with approved branding if permitted -->
+      <img src="assets/logo-placeholder.png" alt="charity: water logo (placeholder)" />
+    </div>
+  </header>
 
+  <main class="container">
+    <section class="hud" aria-label="Game HUD">
+      <div class="stat" aria-live="polite"><strong>Score:</strong> <span id="score">0</span></div>
+      <div class="stat" aria-live="polite"><strong>Timer:</strong> <span id="timer">30</span>s</div>
+    </section>
+
+    <section id="game" class="game-area" aria-label="Game Area">
+      <!-- Drops are spawned here by JS -->
+      <button id="startBtn" class="cta" aria-label="Start game">Start</button>
+      <div id="feedback" class="feedback" aria-live="polite"></div>
+    </section>
+
+    <section class="controls">
+      <button id="replayBtn" class="ghost" disabled aria-label="Replay game">Replay</button>
+      <a class="link" href="https://www.charitywater.org" target="_blank" rel="noopener">Learn more / Donate</a>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <small>Project 4 • Built with HTML, CSS, and JS • Placeholder branding only</small>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
