@@ -21,11 +21,15 @@ const sumPolluted = document.getElementById('sumPolluted');
 const sumLost = document.getElementById('sumLost');
 const summaryPlayAgain = document.getElementById('summaryPlayAgain');
 
-// ---- Game state ----
 let score = 0;
 let timeLeft = 30;
 let running = false;
-let spawnLoop = null;
+let paused = false;
+
+let spawnTimer = null;
+let spawnDelay = 600;
+const minSpawnDelay = 350;
+
 let timerLoop = null;
 
 let cleanClicks = 0;
@@ -36,7 +40,8 @@ let timeToFirstClean = null;
 let gameStartEpoch = 0;
 let waterLost = 0;
 
-// ---- Helpers ----
+let lastFocusedButton = null;
+
 const rng = (min, max) => Math.random() * (max - min) + min;
 
 function setFeedback(msg, color) {
@@ -55,21 +60,30 @@ function popText(x, y, text, color) {
   setTimeout(() => el.remove(), 650);
 }
 
+function flashGoal() {
+  if (!goalFill) return;
+  const prev = goalFill.style.filter;
+  goalFill.style.filter = 'brightness(1.25)';
+  setTimeout(() => (goalFill.style.filter = prev || 'none'), 250);
+}
+
 function updateGoal() {
   const step = 100;
   const prev = Math.floor(score / step) * step;
   const next = prev + step;
+  const remaining = Math.max(0, next - score);
   const pct = Math.min(100, ((score - prev) / (next - prev)) * 100);
   if (goalFill) goalFill.style.width = pct + '%';
   if (goalBar) goalBar.setAttribute('aria-valuenow', String(Math.round(pct)));
-  if (goalText) goalText.textContent = `Next milestone: ${next} points`;
+  if (goalText) goalText.textContent = `Next milestone: ${next} points (${remaining} to go)`;
+  if (score && score % step === 0) flashGoal();
 }
 
-// ---- Persistence ----
 const STORAGE = {
   HIGH: 'waterdrop:highscore',
   STATS: 'waterdrop:stats',
-  ACH: 'waterdrop:ach'
+  ACH: 'waterdrop:ach',
+  MUTE: 'waterdrop:mute'
 };
 
 const defaultStats = { totalGames: 0, totalClean: 0, totalPolluted: 0, bestCleanStreak: 0 };
@@ -92,14 +106,13 @@ let achieved = loadJSON(STORAGE.ACH, {});
 
 if (highScoreEl) highScoreEl.textContent = String(highScore);
 
-// ---- Achievements ----
 const BADGES = [
-  { id:'score100',  title:'Clean Water Hero',  desc:'Score 100+ in a game.',          color:'#16a34a', icon:'★', check:m=> m.finalScore >= 100 },
-  { id:'score200',  title:'Flow Master',       desc:'Score 200+ in a game.',          color:'#0284c7', icon:'◆', check:m=> m.finalScore >= 200 },
-  { id:'streak10',  title:'Precision Catcher', desc:'10 clean catches in a row.',     color:'#a855f7', icon:'⧗', check:m=> m.bestStreak >= 10 },
-  { id:'noPollute', title:'Crystal Hands',     desc:'Finish with 0 polluted clicks.', color:'#22c55e', icon:'✓', check:m=> m.pollutedClicks === 0 && m.cleanClicks > 0 },
-  { id:'speedstart',title:'Quick Start',       desc:'First clean within 3 seconds.',   color:'#f97316', icon:'⚡', check:m=> m.timeToFirstClean !== null && m.timeToFirstClean <= 3 },
-  { id:'fiveGames', title:'Steady Stream',     desc:'Play 5 total games.',            color:'#64748b', icon:'∞', check:m=> m.stats.totalGames >= 5 },
+  { id: 'score100',  title: 'Clean Water Hero',  desc: 'Score 100+ in a game.',          color: '#16a34a', icon: '★', check: m => m.finalScore >= 100 },
+  { id: 'score200',  title: 'Flow Master',       desc: 'Score 200+ in a game.',          color: '#0284c7', icon: '◆', check: m => m.finalScore >= 200 },
+  { id: 'streak10',  title: 'Precision Catcher', desc: '10 clean catches in a row.',     color: '#a855f7', icon: '⧗', check: m => m.bestStreak >= 10 },
+  { id: 'noPollute', title: 'Crystal Hands',     desc: 'Finish with 0 polluted clicks.', color: '#22c55e', icon: '✓', check: m => m.pollutedClicks === 0 && m.cleanClicks > 0 },
+  { id: 'speedstart',title: 'Quick Start',       desc: 'First clean within 3 seconds.',   color: '#f97316', icon: '⚡', check: m => m.timeToFirstClean !== null && m.timeToFirstClean <= 3 },
+  { id: 'fiveGames', title: 'Steady Stream',     desc: 'Play 5 total games.',            color: '#64748b', icon: '∞', check: m => m.stats.totalGames >= 5 }
 ];
 
 function renderAchievements() {
@@ -119,22 +132,46 @@ function renderAchievements() {
   });
 }
 
-if (achievementsBtn && achievementsModal) {
-  achievementsBtn.addEventListener('click', () => {
-    renderAchievements();
-    achievementsModal.showModal();
-  });
-  achievementsModal.addEventListener('close', () => achievementsModal.blur());
+function toast(text, color) {
+  const t = document.createElement('div');
+  t.style.position = 'fixed';
+  t.style.right = '14px';
+  t.style.bottom = '14px';
+  t.style.background = '#fff';
+  t.style.border = '1px solid #e5e7eb';
+  t.style.boxShadow = '0 8px 24px rgba(17,24,39,.08)';
+  t.style.borderRadius = '12px';
+  t.style.padding = '10px 14px';
+  t.style.fontWeight = '700';
+  t.style.color = color || '#111';
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1600);
 }
 
-// ---- Spawning & interactions ----
+if (achievementsBtn && achievementsModal) {
+  achievementsBtn.addEventListener('click', () => {
+    lastFocusedButton = document.activeElement;
+    renderAchievements();
+    achievementsModal.showModal();
+    const closeBtn = achievementsModal.querySelector('button[value="close"]');
+    closeBtn && closeBtn.focus();
+  });
+  achievementsModal.addEventListener('close', () => {
+    achievementsModal.blur();
+    lastFocusedButton && lastFocusedButton.focus();
+  });
+}
+
 function spawnDrop() {
   const isBad = Math.random() < 0.25;
   const drop = document.createElement('button');
   drop.className = 'drop ' + (isBad ? 'bad' : 'clean');
   drop.setAttribute('aria-label', isBad ? 'Polluted drop' : 'Clean water drop');
 
-  const x = rng(10, Math.max(10, game.clientWidth - 44));
+  game.appendChild(drop);
+  const dropW = drop.offsetWidth || 34;
+  const x = rng(10, Math.max(10, game.clientWidth - dropW - 10));
   drop.style.left = x + 'px';
   drop.style.top = '-40px';
 
@@ -147,6 +184,7 @@ function spawnDrop() {
   let y = -40;
   const loop = setInterval(() => {
     if (!running) { clearInterval(loop); drop.remove(); return; }
+    if (paused) return;
     y += speed * 0.016;
     drop.style.top = y + 'px';
     if (y > game.clientHeight) {
@@ -157,7 +195,7 @@ function spawnDrop() {
         setFeedback('Polluted hit ground: -2', '#ef4444');
       } else {
         waterLost++;
-        setFeedback('Clean water wasted!', '#ef4444');
+        setFeedback('Missed clean water — catch the next one!', '#ef4444');
       }
       updateGoal();
       clearInterval(loop);
@@ -166,7 +204,7 @@ function spawnDrop() {
   }, 16);
 
   drop.addEventListener('click', (e) => {
-    if (!running) return;
+    if (!running || paused) return;
     clearInterval(loop);
     drop.remove();
     const rect = game.getBoundingClientRect();
@@ -178,7 +216,7 @@ function spawnDrop() {
       currentStreak = 0;
       score = Math.max(0, score - 5);
       popText(px, py, '-5', '#ef4444');
-      setFeedback('Dirty drop. Try again!', '#ef4444');
+      setFeedback('Polluted drop — keep going!', '#ef4444');
     } else {
       cleanClicks++;
       if (timeToFirstClean === null) {
@@ -193,14 +231,19 @@ function spawnDrop() {
     scoreEl.textContent = score;
     updateGoal();
   });
-
-  game.appendChild(drop);
 }
 
-// ---- Lifecycle ----
+function scheduleSpawn() {
+  if (!running) return;
+  spawnDrop();
+  spawnDelay = Math.max(minSpawnDelay, spawnDelay - 6); 
+  spawnTimer = setTimeout(scheduleSpawn, spawnDelay);
+}
+
 function startGame() {
   if (running) return;
   running = true;
+  paused = false;
   score = 0;
   timeLeft = 30;
   scoreEl.textContent = score;
@@ -217,9 +260,12 @@ function startGame() {
   timeToFirstClean = null;
   gameStartEpoch = performance.now();
   waterLost = 0;
+  spawnDelay = 600;
 
-  spawnLoop = setInterval(spawnDrop, 500);
+  scheduleSpawn();
+
   timerLoop = setInterval(() => {
+    if (paused) return;
     timeLeft -= 1;
     timerEl.textContent = timeLeft;
     if (timeLeft <= 0) endGame();
@@ -228,7 +274,8 @@ function startGame() {
 
 function endGame() {
   running = false;
-  clearInterval(spawnLoop);
+  paused = false;
+  clearTimeout(spawnTimer);
   clearInterval(timerLoop);
 
   stats.totalGames += 1;
@@ -240,7 +287,7 @@ function endGame() {
   if (score > highScore) {
     highScore = score;
     localStorage.setItem(STORAGE.HIGH, String(highScore));
-    if (highScoreEl) highScoreEl.textContent = String(highScore);
+    highScoreEl && (highScoreEl.textContent = String(highScore));
     setFeedback(`New High Score! ${highScore}`, '#16a34a');
   } else {
     setFeedback(score >= 100 ? 'Amazing! You are a clean water hero!' : 'Good try! Play again or learn more.');
@@ -264,11 +311,7 @@ function endGame() {
   });
   if (newlyUnlocked.length) {
     saveJSON(STORAGE.ACH, achieved);
-    const rect = game.getBoundingClientRect();
-    newlyUnlocked.slice(0, 2).forEach((b, i) => {
-      const dx = rect.width * (0.3 + i * 0.25);
-      popText(dx, rect.height * 0.35, `🏅 ${b.title}`, b.color);
-    });
+    newlyUnlocked.slice(0, 2).forEach(b => toast(`🏅 ${b.title} unlocked!`, b.color));
   }
 
   [...document.querySelectorAll('.drop')].forEach(d => d.remove());
@@ -282,6 +325,8 @@ function endGame() {
     sumPolluted.textContent = String(pollutedClicks);
     sumLost.textContent = String(waterLost);
     summaryModal.showModal();
+    const closeBtn = summaryModal.querySelector('button[value="close"]');
+    closeBtn && closeBtn.focus();
   }
 }
 
@@ -296,6 +341,13 @@ function resetGame() {
   updateGoal();
 }
 
+function togglePause() {
+  if (!running) return;
+  paused = !paused;
+  game.classList.toggle('is-paused', paused);
+  setFeedback(paused ? 'Paused — press P to resume' : 'Go!');
+}
+
 startBtn.addEventListener('click', startGame);
 replayBtn.addEventListener('click', () => { resetGame(); startGame(); });
 
@@ -303,6 +355,7 @@ document.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (k === 's' && !running) startGame();
   if (k === 'r' && !running) { resetGame(); startGame(); }
+  if (k === 'p') togglePause();
 });
 
 if (summaryPlayAgain) {
@@ -314,5 +367,6 @@ if (summaryPlayAgain) {
   });
 }
 
+// Init
 renderAchievements();
 updateGoal();
