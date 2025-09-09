@@ -18,7 +18,7 @@ This project was created as part of **Project 4 | charity: water Game Concept**.
 ---
 
 ## ✨ Features
-- Simple HTML, CSS, and JavaScript — no frameworks required  
+- Simple HTML, CSS, and JavaScript, no frameworks required  
 - **Responsive design** (desktop & mobile layouts)  
 - Score counter and countdown timer  
 - Feedback messages for good/bad catches  
@@ -35,7 +35,7 @@ Desktop layout:
 Mobile layout:  
 ![Mobile Wireframe](assets/wireframe-mobile.png)  
 
-*(Replace with real screenshots of your game once deployed — these are placeholders.)*
+*(Replace with real screenshots of your game once deployed, these are placeholders.)*
 
 ---
 
