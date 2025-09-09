@@ -13,13 +13,16 @@
     <div class="brand">
       <img src="assets/logo-placeholder.png" alt="charity: water logo (placeholder)" />
     </div>
+    <nav>
+      <a class="cta" href="https://www.charitywater.org/donate" target="_blank" rel="noopener">Give 💧</a>
+    </nav>
   </header>
 
   <main class="container">
-    <section class="hud" aria-label="Game HUD">
-      <div class="stat" aria-live="polite"><strong>Score:</strong> <span id="score">0</span></div>
-      <div class="stat" aria-live="polite"><strong>Timer:</strong> <span id="timer">30</span>s</div>
-      <div class="stat" aria-live="polite"><strong>High Score:</strong> <span id="highScore">0</span></div>
+    <section class="hud" aria-label="Game HUD" role="status" aria-live="polite">
+      <div class="stat"><strong>Score:</strong> <span id="score">0</span></div>
+      <div class="stat"><strong>Timer:</strong> <span id="timer">30</span>s</div>
+      <div class="stat"><strong>High Score:</strong> <span id="highScore">0</span></div>
       <button id="achievementsBtn" class="ghost small" aria-haspopup="dialog" aria-controls="achievementsModal">Achievements</button>
     </section>
 
@@ -47,7 +50,6 @@
     <small>Charity: Water Project</small>
   </footer>
 
-  <!-- Achievements Modal -->
   <dialog id="achievementsModal" class="achievements">
     <form method="dialog" class="achievements-card">
       <header>
@@ -63,7 +65,6 @@
     </form>
   </dialog>
 
-  <!-- Summary Modal -->
   <dialog id="summaryModal" class="summary">
     <form method="dialog" class="summary-card">
       <header>
