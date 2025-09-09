@@ -11,7 +11,6 @@
   <header class="topbar">
     <h1>Water Drop: Clean Water Challenge</h1>
     <div class="brand">
-      <!-- Swap this placeholder with approved branding if permitted -->
       <img src="assets/logo-placeholder.png" alt="charity: water logo (placeholder)" />
     </div>
   </header>
@@ -20,6 +19,8 @@
     <section class="hud" aria-label="Game HUD">
       <div class="stat" aria-live="polite"><strong>Score:</strong> <span id="score">0</span></div>
       <div class="stat" aria-live="polite"><strong>Timer:</strong> <span id="timer">30</span>s</div>
+      <div class="stat" aria-live="polite"><strong>High Score:</strong> <span id="highScore">0</span></div>
+      <button id="achievementsBtn" class="ghost small" aria-haspopup="dialog" aria-controls="achievementsModal">Achievements</button>
     </section>
 
     <section id="game" class="game-area" aria-label="Game Area">
@@ -35,8 +36,24 @@
   </main>
 
   <footer class="footer">
-    <small>Project 4 • Built with HTML, CSS, and JS • Placeholder branding only</small>
+    <small>Charity: Water Project</small>
   </footer>
+
+  <!-- Achievements Modal -->
+  <dialog id="achievementsModal" class="achievements">
+    <form method="dialog" class="achievements-card">
+      <header>
+        <h2>Achievements</h2>
+        <menu>
+          <button value="close" class="ghost small">Close</button>
+        </menu>
+      </header>
+      <div id="achievementsList" class="achievements-list" aria-live="polite"></div>
+      <footer class="achievements-footer">
+        <small>Earn badges by playing — progress saves in your browser.</small>
+      </footer>
+    </form>
+  </dialog>
 
   <script src="script.js"></script>
 </body>
