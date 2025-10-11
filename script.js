@@ -1,3 +1,4 @@
+// ------- DOM refs -------
 const startBtn = document.getElementById('startBtn');
 const replayBtn = document.getElementById('replayBtn');
 const game = document.getElementById('game');
@@ -21,6 +22,7 @@ const sumPolluted = document.getElementById('sumPolluted');
 const sumLost = document.getElementById('sumLost');
 const summaryPlayAgain = document.getElementById('summaryPlayAgain');
 
+// ------- Game state -------
 let score = 0;
 let timeLeft = 30;
 let running = false;
@@ -42,9 +44,11 @@ let waterLost = 0;
 
 let lastFocusedButton = null;
 
+// ------- Utilities -------
 const rng = (min, max) => Math.random() * (max - min) + min;
 
 function setFeedback(msg, color) {
+  if (!feedback) return;
   feedback.textContent = msg;
   feedback.style.borderColor = color || '#e2e8f0';
 }
@@ -79,6 +83,7 @@ function updateGoal() {
   if (score && score % step === 0) flashGoal();
 }
 
+// ------- LocalStorage helpers -------
 const STORAGE = {
   HIGH: 'waterdrop:highscore',
   STATS: 'waterdrop:stats',
@@ -103,9 +108,9 @@ function saveJSON(key, value) {
 let highScore = Number(localStorage.getItem(STORAGE.HIGH) || 0);
 let stats = loadJSON(STORAGE.STATS, defaultStats);
 let achieved = loadJSON(STORAGE.ACH, {});
-
 if (highScoreEl) highScoreEl.textContent = String(highScore);
 
+// ------- Achievements -------
 const BADGES = [
   { id: 'score100',  title: 'Clean Water Hero',  desc: 'Score 100+ in a game.',          color: '#16a34a', icon: '★', check: m => m.finalScore >= 100 },
   { id: 'score200',  title: 'Flow Master',       desc: 'Score 200+ in a game.',          color: '#0284c7', icon: '◆', check: m => m.finalScore >= 200 },
@@ -163,7 +168,7 @@ if (achievementsBtn && achievementsModal) {
   });
 }
 
-/* ---------- Confetti celebration ---------- */
+// ------- Confetti -------
 function ensureConfettiLayer() {
   let layer = document.getElementById('confetti');
   if (!layer) {
@@ -190,8 +195,69 @@ function celebrate() {
     setTimeout(() => d.remove(), 3200);
   }
 }
-/* ----------------------------------------- */
 
+// ------- Difficulty (Project 6) -------
+const difficultySettings = {
+  easy:   { time: 40, spawnDelay: 800, win: 80  },
+  normal: { time: 30, spawnDelay: 600, win: 100 },
+  hard:   { time: 20, spawnDelay: 450, win: 120 }
+};
+let selectedDifficulty = 'normal';
+
+function setDifficultyUI(level){
+  selectedDifficulty = level;
+  const btns = document.querySelectorAll('.diff-btn');
+  if (btns.length) {
+    btns.forEach(btn => {
+      const active = btn.dataset.level === level;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+  setFeedback(`Mode: ${level[0].toUpperCase()+level.slice(1)}`, '#00ADEF');
+}
+
+// Attach listeners if buttons exist
+(function wireDifficultyButtons(){
+  const btns = document.querySelectorAll('.diff-btn');
+  if (!btns.length) return; // graceful if HTML not added yet
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => setDifficultyUI(btn.dataset.level));
+  });
+})();
+
+// ------- Sounds (LevelUp bonus) -------
+const sClean    = document.getElementById('s-clean')    || new Audio('assets/sounds/clean.mp3');
+const sPolluted = document.getElementById('s-polluted') || new Audio('assets/sounds/polluted.mp3');
+const sWin      = document.getElementById('s-win')      || new Audio('assets/sounds/win.mp3');
+[sClean, sPolluted, sWin].forEach(a => { if (a && a.volume !== undefined) a.volume = 0.2; });
+
+function playSound(a){
+  if (!a || typeof a.play !== 'function') return;
+  try {
+    a.currentTime = 0;
+    a.play().catch(()=>{});
+  } catch {}
+}
+
+// ------- Milestones (LevelUp bonus) -------
+const milestones = [
+  { score: 50,  msg: 'Getting started! 50 points!' },
+  { score: 100, msg: 'Halfway to a water project! 100 points!' },
+  { score: 200, msg: 'Amazing flow! 200 points!' },
+  { score: 300, msg: 'Clean water champion! 300 points!' }
+];
+const reached = new Set();
+function checkMilestones() {
+  for (const m of milestones) {
+    if (score >= m.score && !reached.has(m.score)) {
+      reached.add(m.score);
+      toast(`💧 ${m.msg}`, '#00ADEF');
+    }
+  }
+}
+
+// ------- Spawning -------
 function spawnDrop() {
   const isBad = Math.random() < 0.25;
   const drop = document.createElement('button');
@@ -227,6 +293,7 @@ function spawnDrop() {
         setFeedback('Missed clean water — catch the next one!', '#ef4444');
       }
       updateGoal();
+      checkMilestones();
       clearInterval(loop);
       drop.remove();
     }
@@ -246,6 +313,7 @@ function spawnDrop() {
       score = Math.max(0, score - 5);
       popText(px, py, '-5', '#ef4444');
       setFeedback('Polluted drop — keep going!', '#ef4444');
+      playSound(sPolluted);
     } else {
       cleanClicks++;
       if (timeToFirstClean === null) {
@@ -256,9 +324,11 @@ function spawnDrop() {
       score += 10;
       popText(px, py, '+10', '#16a34a');
       setFeedback('Great catch! +10', '#16a34a');
+      playSound(sClean);
     }
     scoreEl.textContent = score;
     updateGoal();
+    checkMilestones();
   });
 }
 
@@ -269,16 +339,22 @@ function scheduleSpawn() {
   spawnTimer = setTimeout(scheduleSpawn, spawnDelay);
 }
 
+// ------- Lifecycle -------
 function startGame() {
   if (running) return;
   running = true;
   paused = false;
   score = 0;
-  timeLeft = 30;
+
+  // Apply selected difficulty
+  const cfg = difficultySettings[selectedDifficulty] || difficultySettings.normal;
+  timeLeft   = cfg.time;
+  spawnDelay = cfg.spawnDelay;
+
   scoreEl.textContent = score;
   timerEl.textContent = timeLeft;
-  startBtn.style.display = 'none';
-  replayBtn.disabled = true;
+  if (startBtn) startBtn.style.display = 'none';
+  if (replayBtn) replayBtn.disabled = true;
   setFeedback('Catch the clean water drops!');
   updateGoal();
 
@@ -289,7 +365,7 @@ function startGame() {
   timeToFirstClean = null;
   gameStartEpoch = performance.now();
   waterLost = 0;
-  spawnDelay = 600;
+  reached.clear(); // reset milestone set
 
   scheduleSpawn();
 
@@ -319,13 +395,17 @@ function endGame() {
     highScoreEl && (highScoreEl.textContent = String(highScore));
     setFeedback(`New High Score! ${highScore}`, '#16a34a');
   } else {
-    setFeedback(score >= 100 ? 'Amazing! You are a clean water hero!' : 'Good try! Play again or learn more.');
+    // Use difficulty-specific win threshold for message
+    const need = (difficultySettings[selectedDifficulty]?.win) || 100;
+    setFeedback(score >= need ? 'Amazing! You are a clean water hero!' : 'Good try! Play again or learn more.');
   }
 
-  // === Win celebration on milestone ===
-  if (score >= 100) {
+  // Win celebration on difficulty-based milestone
+  const winThreshold = (difficultySettings[selectedDifficulty]?.win) || 100;
+  if (score >= winThreshold) {
     celebrate();
     setFeedback(`You hit the milestone! 🎉 Score: ${score}`, '#16a34a');
+    playSound(sWin);
   }
 
   const metrics = {
@@ -349,10 +429,13 @@ function endGame() {
     newlyUnlocked.slice(0, 2).forEach(b => toast(`🏅 ${b.title} unlocked!`, b.color));
   }
 
+  // Clean up drops
   [...document.querySelectorAll('.drop')].forEach(d => d.remove());
-  startBtn.style.display = 'inline-block';
-  startBtn.textContent = 'Start';
-  replayBtn.disabled = false;
+  if (startBtn) {
+    startBtn.style.display = 'inline-block';
+    startBtn.textContent = 'Start';
+  }
+  if (replayBtn) replayBtn.disabled = false;
 
   if (summaryModal && sumScore && sumClean && sumPolluted && sumLost) {
     sumScore.textContent = String(score);
@@ -368,7 +451,7 @@ function endGame() {
 function resetGame() {
   [...document.querySelectorAll('.drop')].forEach(d => d.remove());
   score = 0;
-  timeLeft = 30;
+  timeLeft = (difficultySettings[selectedDifficulty]?.time) || 30;
   scoreEl.textContent = score;
   timerEl.textContent = timeLeft;
   currentStreak = 0;
@@ -383,8 +466,9 @@ function togglePause() {
   setFeedback(paused ? 'Paused — press P to resume' : 'Go!');
 }
 
-startBtn.addEventListener('click', startGame);
-replayBtn.addEventListener('click', () => { resetGame(); startGame(); });
+// ------- Events -------
+startBtn && startBtn.addEventListener('click', startGame);
+replayBtn && replayBtn.addEventListener('click', () => { resetGame(); startGame(); });
 
 document.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
@@ -402,5 +486,14 @@ if (summaryPlayAgain) {
   });
 }
 
+// ------- Init -------
 renderAchievements();
 updateGoal();
+
+// Default difficulty button state on first load (if present)
+(function initDefaultDifficulty(){
+  const activeBtn = document.querySelector('.diff-btn.is-active');
+  if (activeBtn) {
+    setDifficultyUI(activeBtn.dataset.level || 'normal');
+  }
+})();
