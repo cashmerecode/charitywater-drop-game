@@ -3,8 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Project 5 | Water Drop: Clean Water Challenge</title>
-  <meta name="description" content="A simple web game inspired by charity: water to raise awareness about clean water access." />
+  <title>Project 6 | Completed charity: water Game</title>
+  <meta name="description" content="A web game inspired by charity: water to raise awareness about clean water access." />
+
+  <!-- Brand font (evokes charity: water style) -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- stylesheet -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -19,6 +24,14 @@
   </header>
 
   <main class="container">
+    <!-- Difficulty modes (NEW for Project 6) -->
+    <section class="difficulties" aria-label="Difficulty">
+      <button class="diff-btn" data-level="easy"   aria-pressed="false">Easy</button>
+      <button class="diff-btn is-active" data-level="normal" aria-pressed="true">Normal</button>
+      <button class="diff-btn" data-level="hard"   aria-pressed="false">Hard</button>
+    </section>
+
+    <!-- HUD -->
     <section class="hud" aria-label="Game HUD" role="status" aria-live="polite">
       <div class="stat"><strong>Score:</strong> <span id="score">0</span></div>
       <div class="stat"><strong>Timer:</strong> <span id="timer">30</span>s</div>
@@ -26,6 +39,7 @@
       <button id="achievementsBtn" class="ghost small" aria-haspopup="dialog" aria-controls="achievementsModal">Achievements</button>
     </section>
 
+    <!-- Goal / Milestone bar -->
     <section class="goal" aria-label="Milestone">
       <div class="goal-label">
         <span id="goalText">Next milestone: 100 points</span>
@@ -35,11 +49,13 @@
       </div>
     </section>
 
+    <!-- Game area -->
     <section id="game" class="game-area" aria-label="Game Area">
       <button id="startBtn" class="cta" aria-label="Start game">Start</button>
       <div id="feedback" class="feedback" aria-live="polite"></div>
     </section>
 
+    <!-- Controls + links -->
     <section class="controls">
       <button id="replayBtn" class="ghost" disabled aria-label="Replay game">Replay</button>
       <a class="link" href="https://www.charitywater.org" target="_blank" rel="noopener noreferrer">Learn more / Donate</a>
@@ -53,7 +69,12 @@
   <!-- Confetti layer for win celebration -->
   <div id="confetti" aria-hidden="true"></div>
 
-  <!-- Achievements -->
+  <!-- Optional preloaded audio (LevelUp: Sound Effects) -->
+  <audio id="s-clean"    src="assets/sounds/clean.mp3"    preload="auto"></audio>
+  <audio id="s-polluted" src="assets/sounds/polluted.mp3" preload="auto"></audio>
+  <audio id="s-win"      src="assets/sounds/win.mp3"      preload="auto"></audio>
+
+  <!-- Achievements dialog -->
   <dialog id="achievementsModal" class="achievements">
     <form method="dialog" class="achievements-card">
       <header>
@@ -69,7 +90,7 @@
     </form>
   </dialog>
 
-  <!-- Summary -->
+  <!-- Summary dialog -->
   <dialog id="summaryModal" class="summary">
     <form method="dialog" class="summary-card">
       <header>
@@ -108,6 +129,7 @@
     </form>
   </dialog>
 
+  <!-- script -->
   <script src="script.js"></script>
 </body>
 </html>
