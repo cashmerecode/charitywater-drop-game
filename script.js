@@ -163,6 +163,35 @@ if (achievementsBtn && achievementsModal) {
   });
 }
 
+/* ---------- Confetti celebration ---------- */
+function ensureConfettiLayer() {
+  let layer = document.getElementById('confetti');
+  if (!layer) {
+    layer = document.createElement('div');
+    layer.id = 'confetti';
+    layer.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(layer);
+  }
+  return layer;
+}
+function celebrate() {
+  const layer = ensureConfettiLayer();
+  const pieces = 140;
+  const w = window.innerWidth;
+  for (let i = 0; i < pieces; i++) {
+    const d = document.createElement('div');
+    d.className = 'confetti';
+    d.style.left = Math.random() * w + 'px';
+    d.style.top = '-20px';
+    d.style.background = `hsl(${Math.floor(Math.random() * 360)}, 100%, 60%)`;
+    d.style.transform = `translateY(0) rotate(${Math.random() * 360}deg)`;
+    d.style.animationDuration = (1.3 + Math.random() * 1.3) + 's';
+    layer.appendChild(d);
+    setTimeout(() => d.remove(), 3200);
+  }
+}
+/* ----------------------------------------- */
+
 function spawnDrop() {
   const isBad = Math.random() < 0.25;
   const drop = document.createElement('button');
@@ -291,6 +320,12 @@ function endGame() {
     setFeedback(`New High Score! ${highScore}`, '#16a34a');
   } else {
     setFeedback(score >= 100 ? 'Amazing! You are a clean water hero!' : 'Good try! Play again or learn more.');
+  }
+
+  // === Win celebration on milestone ===
+  if (score >= 100) {
+    celebrate();
+    setFeedback(`You hit the milestone! 🎉 Score: ${score}`, '#16a34a');
   }
 
   const metrics = {
