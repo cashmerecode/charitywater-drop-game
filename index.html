@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Project 4 | Water Drop: Clean Water Challenge</title>
+  <title>Project 5 | Water Drop: Clean Water Challenge</title>
   <meta name="description" content="A simple web game inspired by charity: water to raise awareness about clean water access." />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -47,9 +47,13 @@
   </main>
 
   <footer class="footer">
-    <small>Charity: Water Project</small>
+    <small>Prototype inspired by charity: water (educational use only).</small>
   </footer>
 
+  <!-- Confetti layer for win celebration -->
+  <div id="confetti" aria-hidden="true"></div>
+
+  <!-- Achievements -->
   <dialog id="achievementsModal" class="achievements">
     <form method="dialog" class="achievements-card">
       <header>
@@ -65,6 +69,7 @@
     </form>
   </dialog>
 
+  <!-- Summary -->
   <dialog id="summaryModal" class="summary">
     <form method="dialog" class="summary-card">
       <header>
