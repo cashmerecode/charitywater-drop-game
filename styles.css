@@ -62,7 +62,7 @@ body {
 
 .stat { font-weight: 600; }
 
-/* ---------- Difficulty buttons (NEW) ---------- */
+/* ---------- Difficulty buttons ---------- */
 .difficulties {
   display: flex;
   gap: 8px;
@@ -177,26 +177,60 @@ body {
   pointer-events: none;
 }
 
-/* ---------- Drops ---------- */
+/* ---------- Drops (updated realistic look) ---------- */
 .drop {
   position: absolute;
-  width: 34px;
-  height: 34px;
-  border-radius: 50% 50% 60% 60%;
+  width: 38px;
+  height: 38px;
+  border-radius: 50% 50% 55% 55% / 60% 60% 45% 45%;
   transform: rotate(45deg);
   display: flex;
   align-items: center;
   justify-content: center;
   user-select: none;
   cursor: pointer;
-  border: 2px solid rgba(0, 0, 0, .05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, opacity 0.3s ease;
+  box-shadow:
+    inset 2px 2px 6px rgba(255,255,255,0.5),
+    inset -3px -4px 8px rgba(0,0,80,0.25),
+    0 4px 10px rgba(0,0,0,0.15);
 }
 
-.drop.clean { background: var(--cw-blue); }
+.drop.clean {
+  background: radial-gradient(circle at 30% 30%, #b7eaff 0%, var(--cw-blue) 70%);
+}
 
-.drop.bad { background: #94a3b8; border-color: #ef4444; }
+.drop.bad {
+  background: radial-gradient(circle at 35% 35%, #d2d9e0 0%, #94a3b8 70%);
+  border-color: #ef4444;
+}
 
-.drop .label { transform: rotate(-45deg); color: #fff; font-size: 12px; font-weight: 800; }
+.drop::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  width: 10px;
+  height: 10px;
+  background: rgba(255,255,255,0.5);
+  border-radius: 50%;
+  filter: blur(1px);
+  transform: rotate(-45deg);
+}
+
+.drop:hover {
+  transform: rotate(45deg) scale(1.1);
+  opacity: 0.9;
+}
+
+.drop .label {
+  transform: rotate(-45deg);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+}
 
 /* Floating +/− text */
 .pop {
